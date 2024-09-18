@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Scanner</title>
+</head>
+<body>
+    <h1>Vulnerability Scanner</h1>
+    <form id="scan-form">
+        <label for="target">Target:</label>
+        <input type="text" id="target" name="target" required>
+        <button type="submit">Scan</button>
+    </form>
+
+    <h2>Scan Results</h2>
+    <div id="results"></div>
+
+    <script>
+        document.getElementById('scan-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const target = document.getElementById('target').value;
+            const response = await fetch('/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ target })
+            });
+            const data = await response.json();
+            document.getElementById('results').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        });
+    </script>
+</body>
+</html>
