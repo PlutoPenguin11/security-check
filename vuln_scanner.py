@@ -13,6 +13,9 @@ def index():
 
 def check_headers(target_url):
     headers = {}
+
+    # Temporary, replace when ready
+
     try:
         response = requests.get(target_url, timeout=5, verify=False)
         headers["X-Frame-Options"] = response.headers.get("X-Frame-Options", "Not Set")
