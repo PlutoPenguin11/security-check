@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vulnerability Scanner</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+      }
+      h1 {
+        color: #333;
+      }
+      form {
+        margin-bottom: 20px;
+      }
+      input,
+      button {
+        padding: 10px;
+        margin-top: 5px;
+        margin-bottom: 10px;
+      }
+      button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #218838;
+      }
+      #results {
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #fff;
+        display: none; /* Hide by default */
+      }
+      pre {
+        white-space: pre-wrap; /* Ensure long lines wrap */
+        word-wrap: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Vulnerability Scanner</h1>
+    <form id="scanForm" action="/scan" method="post">
+      <label for="target">Target URL:</label>
+      <input
+        type="text"
+        id="target"
+        name="target"
+        placeholder="http://example.com"
+        required
+      />
+      <br />
+      <label for="port_start">Start Port:</label>
+      <input
+        type="number"
+        id="port_start"
+        name="port_start"
+        value="1"
+        min="1"
+        max="65535"
+      />
+      <br />
+      <label for="port_end">End Port:</label>
+      <input
+        type="number"
+        id="port_end"
+        name="port_end"
+        value="1024"
+        min="1"
+        max="65535"
+      />
+      <br />
+      <button type="submit">Scan</button>
+      <button type="button" onclick="defaultScan()">Default Scan</button>
+    </form>
+
+    <div id="results">
+      <h2>Scan Results:</h2>
+      <pre id="resultContent"></pre>
+    </div>
+
+    <script>
+      async function defaultScan() {
+        document.getElementById("target").value = "http://example.com"; // Default target
+        document.getElementById("port_start").value = "1";
+        document.getElementById("port_end").value = "1024";
+
+        // Submit the form
+        document.getElementById("scanForm").submit();
+      }
+
+      // Intercept form submission to handle results on the same page
+      document.getElementById("scanForm").onsubmit = async function (event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const formData = new FormData(this);
+        const response = await fetch(this.action, {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+
+        // Display results
+        const resultContent = document.getElementById("resultContent");
+        resultContent.textContent = JSON.stringify(data, null, 2);
+        document.getElementById("results").style.display = "block"; // Show results div
+      };
+    </script>
+  </body>
+</html>
