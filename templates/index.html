@@ -35,16 +35,29 @@
       button:hover {
         background-color: #218838;
       }
-      #results {
+      #results,
+      #loading {
         border: 1px solid #ccc;
         padding: 10px;
         border-radius: 5px;
         background-color: #fff;
+        margin-top: 10px;
+      }
+      #results {
         display: none; /* Hide by default */
+      }
+      #loading {
+        display: none; /* Hide loading indicator */
+        text-align: center;
+        font-weight: bold;
       }
       pre {
         white-space: pre-wrap; /* Ensure long lines wrap */
         word-wrap: break-word;
+      }
+      .error {
+        color: red;
+        margin-top: 10px;
       }
     </style>
   </head>
@@ -68,6 +81,7 @@
         value="1"
         min="1"
         max="65535"
+        required
       />
       <br />
       <label for="port_end">End Port:</label>
@@ -78,16 +92,19 @@
         value="1024"
         min="1"
         max="65535"
+        required
       />
       <br />
       <button type="submit">Scan</button>
       <button type="button" onclick="defaultScan()">Default Scan</button>
     </form>
 
+    <div id="loading">Scanning... Please wait.</div>
     <div id="results">
       <h2>Scan Results:</h2>
       <pre id="resultContent"></pre>
     </div>
+    <div id="error" class="error"></div>
 
     <script>
       async function defaultScan() {
@@ -99,21 +116,48 @@
         document.getElementById("scanForm").submit();
       }
 
-      // Intercept form submission to handle results on the same page
       document.getElementById("scanForm").onsubmit = async function (event) {
         event.preventDefault(); // Prevent the default form submission
 
         const formData = new FormData(this);
-        const response = await fetch(this.action, {
-          method: "POST",
-          body: formData,
-        });
-        const data = await response.json();
-
-        // Display results
         const resultContent = document.getElementById("resultContent");
-        resultContent.textContent = JSON.stringify(data, null, 2);
-        document.getElementById("results").style.display = "block"; // Show results div
+        const errorDiv = document.getElementById("error");
+        const loadingDiv = document.getElementById("loading");
+
+        // Clear previous results or errors
+        document.getElementById("results").style.display = "none";
+        resultContent.textContent = "";
+        errorDiv.style.display = "none";
+        errorDiv.textContent = "";
+
+        loadingDiv.style.display = "block"; // Show loading spinner
+
+        try {
+          const response = await fetch(this.action, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Error: ${errorText}`); // Log error
+            errorDiv.textContent = `Error: ${response.status} ${response.statusText} - ${errorText}`;
+            errorDiv.style.display = "block";
+            return;
+          }
+
+          const data = await response.json();
+
+          // Display results
+          resultContent.textContent = JSON.stringify(data, null, 2);
+          document.getElementById("results").style.display = "block";
+        } catch (error) {
+          console.error(`Fetch error: ${error.message}`); // Log error
+          errorDiv.textContent = `Fetch error: ${error.message}`;
+          errorDiv.style.display = "block";
+        } finally {
+          loadingDiv.style.display = "none"; // Hide loading spinner
+        }
       };
     </script>
   </body>
