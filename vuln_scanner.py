@@ -15,9 +15,15 @@ CORS(app, resources={r"/scan": {"origins": "*"}})  # Adjust origins as needed
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+# Loads 'Report History' page.
+@app.route("/reports")
+def reports(): return render_template("reports.html")
 
 # Checks for common security headers in the HTTP response.
 def check_headers(target_url):
@@ -37,6 +43,7 @@ def check_headers(target_url):
         return {"error": f"HTTP request failed: {e}"}
     return headers
 
+
 # Scans a single port to check if it's open.
 def scan_port(host, port):
     try:
@@ -47,6 +54,7 @@ def scan_port(host, port):
     except Exception as e:
         logging.error(f"Error scanning port {port} on host {host}: {e}")
     return None
+
 
 # Helper function to get SSL/TLS information
 def get_encryption_info(hostname, port=443):
@@ -65,7 +73,7 @@ def get_encryption_info(hostname, port=443):
                 return {
                     "cipher": cipher_name,
                     "protocol_version": protocol_version,
-                    "key_exchange_strength": key_exchange_strength,
+                    "key_exchange_strength": str(key_exchange_strength) + " bits",
                     "strength": strength
                 }
             else:
@@ -85,6 +93,7 @@ def get_encryption_info(hostname, port=443):
             "error": str(e)
         }
 
+
 # Route to analyze the key exchange strength for both the user-specified server and local network
 @app.route("/check_encryption_strength", methods=["POST"])
 def check_encryption_strength():
@@ -96,6 +105,7 @@ def check_encryption_strength():
         "remote_server_info": remote_server_info,
         "local_network_info": local_network_info
     })
+
 
 @app.route("/scan", methods=["POST"])
 # Handles the scan request. Performs HTTP header checks and port scanning.
@@ -124,6 +134,7 @@ def scan():
 
     logging.info(f"Open ports: {open_ports}")
     return jsonify({"headers": headers, "open_ports": open_ports})
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True, threaded=True)
