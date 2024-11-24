@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vulnerability Scanner</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Report</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -19,8 +19,7 @@
       form {
         margin-bottom: 20px;
       }
-      input,
-      button {
+      input, button {
         padding: 10px;
         margin-top: 5px;
         margin-bottom: 10px;
@@ -35,130 +34,210 @@
       button:hover {
         background-color: #218838;
       }
-      #results,
-      #loading {
+      #results {
         border: 1px solid #ccc;
         padding: 10px;
         border-radius: 5px;
         background-color: #fff;
-        margin-top: 10px;
+        display: none;
       }
-      #results {
-        display: none; /* Hide by default */
+      #progress {
+        font-style: italic;
+        display: none;
       }
-      #loading {
-        display: none; /* Hide loading indicator */
-        text-align: center;
-        font-weight: bold;
+      .result-section {
+        margin-top: 15px;
       }
       pre {
-        white-space: pre-wrap; /* Ensure long lines wrap */
+        white-space: pre-wrap;
         word-wrap: break-word;
       }
-      .error {
-        color: red;
+      .dropdown {
+        cursor: pointer;
+        background-color: #f1f1f1;
+        padding: 10px;
         margin-top: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .dropdown-content {
+        display: none;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #fff;
+        margin-top: 5px;
       }
     </style>
   </head>
   <body>
-    <h1>Vulnerability Scanner</h1>
-    <form id="scanForm" action="/scan" method="post">
+    <h1>Vulnerability Report</h1>
+
+    <form id="scanForm">
       <label for="target">Target URL:</label>
-      <input
-        type="text"
-        id="target"
-        name="target"
-        placeholder="http://example.com"
-        required
-      />
-      <br />
+      <input type="text" id="target" name="target" placeholder="http://example.com" required>
+      <small>This URL will be analyzed for port and encryption testing purposes.</small>
+      <br>
       <label for="port_start">Start Port:</label>
-      <input
-        type="number"
-        id="port_start"
-        name="port_start"
-        value="1"
-        min="1"
-        max="65535"
-        required
-      />
-      <br />
+      <input type="number" id="port_start" name="port_start" value="1" min="1" max="65535">
+      <br>
       <label for="port_end">End Port:</label>
-      <input
-        type="number"
-        id="port_end"
-        name="port_end"
-        value="1024"
-        min="1"
-        max="65535"
-        required
-      />
-      <br />
-      <button type="submit">Scan</button>
-      <button type="button" onclick="defaultScan()">Default Scan</button>
+      <input type="number" id="port_end" name="port_end" value="1024" min="1" max="65535">
+      <br>
+      <button type="submit">Scan Now</button>
     </form>
 
-    <div id="loading">Scanning... Please wait.</div>
+    <p id="progress">Scanning in progress, please wait...</p>
+
     <div id="results">
-      <h2>Scan Results:</h2>
-      <pre id="resultContent"></pre>
+      <h2>Report Results</h2>
+      <div id="headers-result" class="result-section">
+  <h3>Headers Assessment:</h3>
+  <p><strong>X-Frame-Options:</strong>
+    <span id="xFrameOptionsSimple" style="color: black; font-weight: bold;"></span>
+    <small id="xFrameOptionsDesc" style="font-size: inherit;"></small>
+  </p>
+  <p><strong>X-Content-Type-Options:</strong>
+    <span id="xContentTypeOptionsSimple" style="color: black; font-weight: bold;"></span>
+    <small id="xContentTypeOptionsDesc" style="font-size: inherit;"></small>
+  </p>
+  <p><strong>Content-Security-Policy:</strong>
+    <span id="contentSecurityPolicySimple" style="color: black; font-weight: bold;"></span>
+    <small id="contentSecurityPolicyDesc" style="font-size: inherit;"></small>
+  </p>
+  <p><strong>Strict-Transport-Security:</strong>
+    <span id="strictTransportSecuritySimple" style="color: black; font-weight: bold;"></span>
+    <small id="strictTransportSecurityDesc" style="font-size: inherit;"></small>
+  </p>
+  <div class="dropdown">
+    Advanced
+    <div class="dropdown-content">
+      <p><strong>X-Frame-Options:</strong> <span id="xFrameOptions"></span></p>
+      <p><strong>X-Content-Type-Options:</strong> <span id="xContentTypeOptions"></span></p>
+      <p><strong>Content-Security-Policy:</strong> <span id="contentSecurityPolicy"></span></p>
+      <p><strong>Strict-Transport-Security:</strong> <span id="strictTransportSecurity"></span></p>
+      <p><strong>Error:</strong> <span id="headerError"></span></p>
     </div>
-    <div id="error" class="error"></div>
+  </div>
+</div>
+      <div id="ports-result" class="result-section">
+        <h3>Port Scan Results:</h3>
+        <p id="openPorts"></p>
+      </div>
+      <div id="encryption-result" class="result-section">
+        <h3>Remote Server Strength Assessment:</h3>
+        <p><strong>Cipher:</strong> <span id="remoteCipher"></span></p>
+        <p><strong>Protocol Version:</strong> <span id="remoteProtocolVersion"></span></p>
+        <p><strong>Key Exchange Strength:</strong> <span id="remoteKeyExchangeStrength"></span></p>
+        <p><strong>Assessment:</strong> <span id="remoteStrength"></span></p>
+        <p><strong>Error:</strong> <span id="remoteError"></span></p>
+      </div>
+      <div id="local-encryption-result" class="result-section">
+        <h3>Local Network Strength Assessment:</h3>
+        <p><strong>Cipher:</strong> <span id="localCipher"></span></p>
+        <p><strong>Protocol Version:</strong> <span id="localProtocolVersion"></span></p>
+        <p><strong>Key Exchange Strength:</strong> <span id="localKeyExchangeStrength"></span></p>
+        <p><strong>Assessment:</strong> <span id="localStrength"></span></p>
+        <p><strong>Error:</strong> <span id="localError"></span></p>
+      </div>
+    </div>
 
     <script>
-      async function defaultScan() {
-        document.getElementById("target").value = "http://example.com"; // Default target
-        document.getElementById("port_start").value = "1";
-        document.getElementById("port_end").value = "1024";
-
-        // Submit the form
-        document.getElementById("scanForm").submit();
-      }
-
-      document.getElementById("scanForm").onsubmit = async function (event) {
-        event.preventDefault(); // Prevent the default form submission
-
-        const formData = new FormData(this);
-        const resultContent = document.getElementById("resultContent");
-        const errorDiv = document.getElementById("error");
-        const loadingDiv = document.getElementById("loading");
-
-        // Clear previous results or errors
-        document.getElementById("results").style.display = "none";
-        resultContent.textContent = "";
-        errorDiv.style.display = "none";
-        errorDiv.textContent = "";
-
-        loadingDiv.style.display = "block"; // Show loading spinner
-
-        try {
-          const response = await fetch(this.action, {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Error: ${errorText}`); // Log error
-            errorDiv.textContent = `Error: ${response.status} ${response.statusText} - ${errorText}`;
-            errorDiv.style.display = "block";
-            return;
-          }
-
-          const data = await response.json();
-
-          // Display results
-          resultContent.textContent = JSON.stringify(data, null, 2);
-          document.getElementById("results").style.display = "block";
-        } catch (error) {
-          console.error(`Fetch error: ${error.message}`); // Log error
-          errorDiv.textContent = `Fetch error: ${error.message}`;
-          errorDiv.style.display = "block";
-        } finally {
-          loadingDiv.style.display = "none"; // Hide loading spinner
+      document.querySelector('.dropdown').addEventListener('click', function() {
+        const content = this.querySelector('.dropdown-content');
+        if (content.style.display === 'block') {
+          content.style.display = 'none';
+        } else {
+          content.style.display = 'block';
         }
-      };
+      });
+
+      document.getElementById("scanForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        
+        // Show progress message
+        document.getElementById("progress").style.display = "block";
+        document.getElementById("results").style.display = "none"; // Hide results initially
+        
+        // Run the scan
+        fetch("/scan", {
+          method: "POST",
+          body: formData,
+        })
+        .then(response => response.json())
+        .then(scanData => {
+          const serverUrl = document.getElementById("target").value;
+          fetch("/check_encryption_strength", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ server_url: serverUrl })
+          })
+          .then(response => response.json())
+          .then(data => {
+            const headersResult = scanData.headers;
+            const openPorts = scanData.open_ports;
+
+            // Simple Header descriptions for average users
+            document.getElementById("xFrameOptionsSimple").textContent = headersResult["X-Frame-Options"] !== "Not Set." ? "Set." : "Not Set.";
+            document.getElementById("xFrameOptionsDesc").textContent = headersResult["X-Frame-Options"] !== "Not Set."
+              ? "Protected against clickjacking attacks."
+              : "This should be set for better security.";
+            document.getElementById("xContentTypeOptionsSimple").textContent = headersResult["X-Content-Type-Options"] !== "Not Set." ? "Set." : "Not Set.";
+            document.getElementById("xContentTypeOptionsDesc").textContent = headersResult["X-Content-Type-Options"] !== "Not Set."
+              ? "Prevents MIME-sniffing, which can have security implications." 
+              : "This should be set for better security.";
+            document.getElementById("contentSecurityPolicySimple").textContent = headersResult["Content-Security-Policy"] !== "Not Set." ? "Set." : "Not Set.";
+            document.getElementById("contentSecurityPolicyDesc").textContent = headersResult["Content-Security-Policy"] !== "Not Set."
+              ? "Defines how content loads on your site to prevent attacks." 
+              : "This should be set for better security.";
+            document.getElementById("strictTransportSecuritySimple").textContent = headersResult["Strict-Transport-Security"] !== "Not Set." ? "Set." : "Not Set.";
+            document.getElementById("strictTransportSecurityDesc").textContent = headersResult["Strict-Transport-Security"] !== "Not Set."
+              ? "Forces secure (HTTPS) connections to your site." 
+              : "This should be set for better security.";
+
+                        // Advanced Header results
+            document.getElementById("xFrameOptions").textContent = headersResult["X-Frame-Options"] || "Not Set.";
+            document.getElementById("xContentTypeOptions").textContent = headersResult["X-Content-Type-Options"] || "Not Set.";
+            document.getElementById("contentSecurityPolicy").textContent = headersResult["Content-Security-Policy"] || "Not Set.";
+            document.getElementById("strictTransportSecurity").textContent = headersResult["Strict-Transport-Security"] || "Not Set.";
+            document.getElementById("headerError").textContent = headersResult.error || "No errors";
+
+                        // Populate port scan results
+            const openPortsElement = document.getElementById("openPorts");
+            if (openPorts.length > 0) {
+              openPortsElement.textContent = openPorts.join(', ');
+            } else {
+              openPortsElement.textContent = "No open ports found in the chosen range";
+            }
+
+            // Populate encryption results
+            document.getElementById("remoteCipher").textContent = data.remote_server_info.cipher || "undefined";
+            document.getElementById("remoteProtocolVersion").textContent = data.remote_server_info.protocol_version || "undefined";
+            document.getElementById("remoteKeyExchangeStrength").textContent = data.remote_server_info.key_exchange_strength || "undefined";
+            document.getElementById("remoteStrength").textContent = data.remote_server_info.strength || "undefined";
+            document.getElementById("remoteError").textContent = data.remote_server_info.error || "No errors";
+
+            document.getElementById("localCipher").textContent = data.local_network_info.cipher || "undefined";
+            document.getElementById("localProtocolVersion").textContent = data.local_network_info.protocol_version || "undefined";
+            document.getElementById("localKeyExchangeStrength").textContent = data.local_network_info.key_exchange_strength || "undefined";
+            document.getElementById("localStrength").textContent = data.local_network_info.strength || "undefined";
+            document.getElementById("localError").textContent = data.local_network_info.error || "No errors";
+
+            document.getElementById("progress").style.display = "none"; // Hide progress message
+            document.getElementById("results").style.display = "block"; // Show results div
+          })
+          .catch(error => {
+            document.getElementById("progress").textContent = `Error: ${error.message}`;
+          });
+        })
+        .catch(error => {
+          document.getElementById("progress").textContent = `Error: ${error.message}`;
+        });
+      });
     </script>
   </body>
 </html>
+

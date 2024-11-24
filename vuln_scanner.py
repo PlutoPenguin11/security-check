@@ -1,5 +1,6 @@
 import logging
 import socket
+import ssl
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 
@@ -14,11 +15,9 @@ CORS(app, resources={r"/scan": {"origins": "*"}})  # Adjust origins as needed
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
-
 @app.route("/")
 def index():
     return render_template("index.html")
-
 
 # Checks for common security headers in the HTTP response.
 def check_headers(target_url):
@@ -38,7 +37,6 @@ def check_headers(target_url):
         return {"error": f"HTTP request failed: {e}"}
     return headers
 
-
 # Scans a single port to check if it's open.
 def scan_port(host, port):
     try:
@@ -50,6 +48,54 @@ def scan_port(host, port):
         logging.error(f"Error scanning port {port} on host {host}: {e}")
     return None
 
+# Helper function to get SSL/TLS information
+def get_encryption_info(hostname, port=443):
+    try:
+        context = ssl.create_default_context()
+        with context.wrap_socket(socket.socket(socket.AF_INET), server_hostname=hostname) as sock:
+            sock.connect((hostname, port))
+            cipher = sock.cipher()
+            if cipher:
+                cipher_name, protocol_version, key_exchange_strength = cipher
+                strength = (
+                    "Strong" if key_exchange_strength >= 256 else
+                    "Moderate" if key_exchange_strength >= 128 else
+                    "Weak"
+                )
+                return {
+                    "cipher": cipher_name,
+                    "protocol_version": protocol_version,
+                    "key_exchange_strength": key_exchange_strength,
+                    "strength": strength
+                }
+            else:
+                return {
+                    "cipher": "undefined",
+                    "protocol_version": "undefined",
+                    "key_exchange_strength": "undefined",
+                    "strength": "undefined",
+                    "error": "Cipher information could not be retrieved."
+                }
+    except Exception as e:
+        return {
+            "cipher": "undefined",
+            "protocol_version": "undefined",
+            "key_exchange_strength": "undefined",
+            "strength": "undefined",
+            "error": str(e)
+        }
+
+# Route to analyze the key exchange strength for both the user-specified server and local network
+@app.route("/check_encryption_strength", methods=["POST"])
+def check_encryption_strength():
+    server_url = request.json.get("server_url")
+    hostname = server_url.replace("https://", "").replace("http://", "").split("/")[0]
+    remote_server_info = get_encryption_info(hostname)
+    local_network_info = get_encryption_info("www.google.com")
+    return jsonify({
+        "remote_server_info": remote_server_info,
+        "local_network_info": local_network_info
+    })
 
 @app.route("/scan", methods=["POST"])
 # Handles the scan request. Performs HTTP header checks and port scanning.
@@ -78,7 +124,6 @@ def scan():
 
     logging.info(f"Open ports: {open_ports}")
     return jsonify({"headers": headers, "open_ports": open_ports})
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True, threaded=True)
