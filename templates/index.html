@@ -9,20 +9,67 @@
             font-family: Arial, sans-serif;
             margin: 20px;
             padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
             background-color: #f9f9f9;
+            padding-top: 60px; /* Add space for the banner */
         }
+        .banner {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 40px;
+            z-index: 1000;
+        }
+
+        .banner .title {
+            font-size: 20px;
+            font-weight: bold;
+            position: absolute; /* Allow positioning relative to the banner */
+            left: 50%;
+            transform: translateX(-50%); /* Center the title */
+        }
+
+        .banner .nav-links {
+            position: absolute;
+            left: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .banner .nav-links a {
+            text-decoration: none;
+            color: white;
+            font-size: 16px;
+            padding: 5px 5px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .banner .nav-links a:hover {
+            background-color: #0056b3;
+        }
+
+
         h1 {
             color: #333;
             text-align: center;
+            margin-top: 60px;
         }
         form {
+            margin-top: 60px;
             margin-bottom: 20px;
             background-color: #ffffff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            
         }
         label {
             font-weight: bold;
@@ -42,7 +89,10 @@
             border: none;
             cursor: pointer;
             font-size: 16px;
+            text-align: center;
+            justify-content: center;
             transition: background-color 0.3s ease;
+            
         }
         button:hover {
             background-color: #218838;
@@ -53,7 +103,7 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
+            margin-top: 80px;
         }
         .result-section {
             margin-top: 15px;
@@ -79,9 +129,7 @@
             background-color: #fff;
             margin-top: 5px;
         }
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
+
         #progress {
             font-style: italic;
             display: none;
@@ -128,6 +176,17 @@
     </form>
 
     <p id="progress">Scanning in progress, please wait...</p>
+
+
+    <div class="banner">
+        <div class="title">VeriVuln</div>
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}">Home</a>
+            <a >About Us</a>
+            <a href="{{ url_for('login') }}">Logout</a>
+        </div>
+    </div>
+
 
     <div id="results">
         <h2>Report Results</h2>
