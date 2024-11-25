@@ -1,24 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .banner {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 40px;
+        }
+
+        .banner .title {
+            font-size: 20px;
+            font-weight: bold;
+            position: absolute; /* Allow positioning relative to the banner */
+            left: 50%;
+            transform: translateX(-50%); /* Center the title */
+        }
+
+        .banner .nav-links {
+            position: absolute;
+            left: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .banner .nav-links a {
+            text-decoration: none;
+            color: white;
+            font-size: 16px;
+            padding: 5px 5px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .banner .nav-links a:hover {
+            background-color: #0056b3;
+        }
+
+        .form-container {
+            width: 300px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
 </head>
-
 <body>
-    <h1>Login Page</h1>
+    <div class="banner">
+        <div class="title">VeriVuln</div>
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}">Home</a>
+            <a >About Us</a>
+            <a href="{{ url_for('login') }}">Login</a>
+        </div>
+    </div>
 
-    <form method="POST" action="">
-        {{ form.hidden_tag() }}
-        {{ form.username }}
-        {{ form.password }}
-        {{ form.submit }}
-    </form>
-
-    <a href="{{ url_for('register') }}">Don't have an account? Sign Up</a>
+    <div class="form-container">
+        <h1>Login</h1>
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.username }}
+            </div>
+            <div class="form-group">
+                {{ form.password }}
+            </div>
+            <div class="form-group">
+                {{ form.submit }}
+            </div>
+        </form>
+        <a href="{{ url_for('register') }}">Don't have an account? Sign Up</a>
+    </div>
 </body>
-
 </html>
