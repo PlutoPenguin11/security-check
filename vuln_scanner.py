@@ -24,8 +24,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/scan": {"origins": "*"}})  # Enable CORS for scan route
 
 # Configuration for database and security
-
-credentials_file = 'db_credentials.json' 
+credentials_file = 'db_credentials.json'  # Keeps sensitive info off of git
 try:
     with open(credentials_file, 'r') as f:
         credentials = json.load(f)
