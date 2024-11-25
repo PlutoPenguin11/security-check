@@ -1,261 +1,120 @@
 <!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vulnerability Report</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vulnerability Scanner</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        form {
-            margin-bottom: 20px;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        label {
-            font-weight: bold;
-            color: #333;
-        }
-        input, button {
-            padding: 10px;
-            margin-top: 5px;
-            margin-bottom: 10px;
-            width:97%;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        #results {
-            display: none;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-        }
-        .result-section {
-            margin-top: 15px;
-        }
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .dropdown {
-            cursor: pointer;
-            background-color: #f1f1f1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        .dropdown-content {
-            display: none;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #fff;
-            margin-top: 5px;
-        }
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-        #progress {
-            font-style: italic;
-            display: none;
-            text-align: center;
-            color: #f39c12;
-        }
-        small {
-            display: block;
-            margin-top: 5px;
-            font-size: 0.9rem;
-            color: #777;
-        }
-        .button-container {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .button-container button {
-            background-color: #007bff;
-            color: white;
-            width: auto;
-            font-size: 16px;
-            padding: 10px 20px;
-        }
-        .button-container button:hover {
-            background-color: #0056b3;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+      }
+      h1 {
+        color: #333;
+      }
+      form {
+        margin-bottom: 20px;
+      }
+      input,
+      button {
+        padding: 10px;
+        margin-top: 5px;
+        margin-bottom: 10px;
+      }
+      button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #218838;
+      }
+      #results {
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #fff;
+        display: none; /* Hide by default */
+      }
+      pre {
+        white-space: pre-wrap; /* Ensure long lines wrap */
+        word-wrap: break-word;
+      }
     </style>
-</head>
-<body>
-    <h1>Vulnerability Report</h1>
-
-    <form id="scanForm">
-        <label for="target">Target URL:</label>
-        <input type="text" id="target" name="target" placeholder="http://example.com" required>
-        <small>This URL will be analyzed for port and encryption testing purposes.</small>
-        <br>
-        <label for="port_start">Start Port:</label>
-        <input type="number" id="port_start" name="port_start" value="1" min="1" max="65535">
-        <br>
-        <label for="port_end">End Port:</label>
-        <input type="number" id="port_end" name="port_end" value="1024" min="1" max="65535">
-        <br>
-        <button type="submit">Scan Now</button>
+  </head>
+  <body>
+    <h1>Vulnerability Scanner</h1>
+    <form id="scanForm" action="/scan" method="post">
+      <label for="target">Target URL:</label>
+      <input
+        type="text"
+        id="target"
+        name="target"
+        placeholder="http://example.com"
+        required
+      />
+      <br />
+      <label for="port_start">Start Port:</label>
+      <input
+        type="number"
+        id="port_start"
+        name="port_start"
+        value="1"
+        min="1"
+        max="65535"
+      />
+      <br />
+      <label for="port_end">End Port:</label>
+      <input
+        type="number"
+        id="port_end"
+        name="port_end"
+        value="1024"
+        min="1"
+        max="65535"
+      />
+      <br />
+      <button type="submit">Scan</button>
+      <button type="button" onclick="defaultScan()">Default Scan</button>
     </form>
 
-    <p id="progress">Scanning in progress, please wait...</p>
-
     <div id="results">
-        <h2>Report Results</h2>
-        <div id="headers-result" class="result-section">
-            <h3>Header Assessment:</h3>
-            <p><strong>X-Frame-Options:</strong> <span id="xFrameOptionsSimple"></span><small id="xFrameOptionsDesc"></small></p>
-            <p><strong>X-Content-Type-Options:</strong> <span id="xContentTypeOptionsSimple"></span><small id="xContentTypeOptionsDesc"></small></p>
-            <p><strong>Content-Security-Policy:</strong> <span id="contentSecurityPolicySimple"></span><small id="contentSecurityPolicyDesc"></small></p>
-            <p><strong>Strict-Transport-Security:</strong> <span id="strictTransportSecuritySimple"></span><small id="strictTransportSecurityDesc"></small></p>
-            <div class="dropdown">
-                Advanced
-                <div class="dropdown-content">
-                    <p><strong>X-Frame-Options:</strong> <span id="xFrameOptions"></span></p>
-                    <p><strong>X-Content-Type-Options:</strong> <span id="xContentTypeOptions"></span></p>
-                    <p><strong>Content-Security-Policy:</strong> <span id="contentSecurityPolicy"></span></p>
-                    <p><strong>Strict-Transport-Security:</strong> <span id="strictTransportSecurity"></span></p>
-                    <p><strong>Errors:</strong> <span id="headerError"></span></p>
-                </div>
-            </div>
-        </div>
-        <div id="ports-result" class="result-section">
-            <h3>Port Scan Results:</h3>
-            <p id="openPorts"></p>
-        </div>
-        <div id="encryption-result" class="result-section">
-            <h3>Remote Server Strength Assessment:</h3>
-            <p><strong>Cipher:</strong> <span id="remoteCipher"></span></p>
-            <p><strong>Protocol Version:</strong> <span id="remoteProtocolVersion"></span></p>
-            <p><strong>Key Exchange Strength:</strong> <span id="remoteKeyExchangeStrength"></span></p>
-            <p><strong>Assessment:</strong> <span id="remoteStrength"></span></p>
-            <p><strong>Errors:</strong> <span id="remoteError"></span></p>
-        </div>
-        <div id="local-encryption-result" class="result-section">
-            <h3>Local Network Strength Assessment:</h3>
-            <p><strong>Cipher:</strong> <span id="localCipher"></span></p>
-            <p><strong>Protocol Version:</strong> <span id="localProtocolVersion"></span></p>
-            <p><strong>Key Exchange Strength:</strong> <span id="localKeyExchangeStrength"></span></p>
-            <p><strong>Assessment:</strong> <span id="localStrength"></span></p>
-            <p><strong>Errors:</strong> <span id="localError"></span></p>
-        </div>
+      <h2>Scan Results:</h2>
+      <pre id="resultContent"></pre>
     </div>
 
     <script>
-        document.querySelector('.dropdown').addEventListener('click', function() {
-            const content = this.querySelector('.dropdown-content');
-            content.style.display = content.style.display === 'block' ? 'none' : 'block';
+      async function defaultScan() {
+        document.getElementById("target").value = "http://example.com"; // Default target
+        document.getElementById("port_start").value = "1";
+        document.getElementById("port_end").value = "1024";
+
+        // Submit the form
+        document.getElementById("scanForm").submit();
+      }
+
+      // Intercept form submission to handle results on the same page
+      document.getElementById("scanForm").onsubmit = async function (event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const formData = new FormData(this);
+        const response = await fetch(this.action, {
+          method: "POST",
+          body: formData,
         });
+        const data = await response.json();
 
-        document.getElementById("scanForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-            const formData = new FormData(this);
-
-            // Show progress message
-            document.getElementById("progress").style.display = "block";
-            document.getElementById("results").style.display = "none"; // Hide results initially
-
-            // Run the scan
-            fetch("/scan", {
-                method: "POST",
-                body: formData,
-            })
-            .then(response => response.json())
-            .then(scanData => {
-                const serverUrl = document.getElementById("target").value;
-                fetch("/check_encryption_strength", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ server_url: serverUrl })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    const headersResult = scanData.headers;
-                    const openPorts = scanData.open_ports;
-
-                    // Simple Header descriptions for average users
-                    document.getElementById("xFrameOptionsSimple").textContent = headersResult["X-Frame-Options"] !== "Not Set." ? "Set." : "Not Set.";
-                    document.getElementById("xFrameOptionsDesc").textContent = headersResult["X-Frame-Options"] !== "Not Set." ? "Protects against clickjacking attacks." : "This should be set for better security.";
-                    document.getElementById("xContentTypeOptionsSimple").textContent = headersResult["X-Content-Type-Options"] !== "Not Set." ? "Set." : "Not Set.";
-                    document.getElementById("xContentTypeOptionsDesc").textContent = headersResult["X-Content-Type-Options"] !== "Not Set." ? "Prevents MIME-sniffing, which can have security implications." : "This should be set for better security.";
-                    document.getElementById("contentSecurityPolicySimple").textContent = headersResult["Content-Security-Policy"] !== "Not Set." ? "Set." : "Not Set.";
-                    document.getElementById("contentSecurityPolicyDesc").textContent = headersResult["Content-Security-Policy"] !== "Not Set." ? "Defines how content loads on your site to prevent attacks." : "This should be set for better security.";
-                    document.getElementById("strictTransportSecuritySimple").textContent = headersResult["Strict-Transport-Security"] !== "Not Set." ? "Set." : "Not Set.";
-                    document.getElementById("strictTransportSecurityDesc").textContent = headersResult["Strict-Transport-Security"] !== "Not Set." ? "Forces secure (HTTPS) connections from the site." : "This should be set for better security.";
-
-                    // Advanced Header results
-                    document.getElementById("xFrameOptions").textContent = headersResult["X-Frame-Options"] || "Not Set.";
-                    document.getElementById("xContentTypeOptions").textContent = headersResult["X-Content-Type-Options"] || "Not Set.";
-                    document.getElementById("contentSecurityPolicy").textContent = headersResult["Content-Security-Policy"] || "Not Set.";
-                    document.getElementById("strictTransportSecurity").textContent = headersResult["Strict-Transport-Security"] || "Not Set.";
-                    document.getElementById("headerError").textContent = headersResult.error || "No errors";
-
-                    // Populate port scan results
-                    const openPortsElement = document.getElementById("openPorts");
-                    if (openPorts.length > 0) {
-                        openPortsElement.textContent = openPorts.join(', ');
-                    } else {
-                        openPortsElement.textContent = "No open ports found in the chosen range";
-                    }
-
-                    // Populate encryption results
-                    document.getElementById("remoteCipher").textContent = data.remote_server_info.cipher || "undefined";
-                    document.getElementById("remoteProtocolVersion").textContent = data.remote_server_info.protocol_version || "undefined";
-                    document.getElementById("remoteKeyExchangeStrength").textContent = data.remote_server_info.key_exchange_strength || "undefined";
-                    document.getElementById("remoteStrength").textContent = data.remote_server_info.strength || "undefined";
-                    document.getElementById("remoteError").textContent = data.remote_server_info.error || "No errors";
-
-                    document.getElementById("localCipher").textContent = data.local_network_info.cipher || "undefined";
-                    document.getElementById("localProtocolVersion").textContent = data.local_network_info.protocol_version || "undefined";
-                    document.getElementById("localKeyExchangeStrength").textContent = data.local_network_info.key_exchange_strength || "undefined";
-                    document.getElementById("localStrength").textContent = data.local_network_info.strength || "undefined";
-                    document.getElementById("localError").textContent = data.local_network_info.error || "No errors";
-
-                    document.getElementById("progress").style.display = "none"; // Hide progress message
-                    document.getElementById("results").style.display = "block"; // Show results div
-                })
-                .catch(error => {
-                    document.getElementById("progress").textContent = `Errors: ${error.message}`;
-                });
-            })
-            .catch(error => {
-                document.getElementById("progress").textContent = `Errors: ${error.message}`;
-            });
-        });
+        // Display results
+        const resultContent = document.getElementById("resultContent");
+        resultContent.textContent = JSON.stringify(data, null, 2);
+        document.getElementById("results").style.display = "block"; // Show results div
+      };
     </script>
-    <div class="button-container">
-        <button onclick="window.location.href='/reports'">View Report History</button>
-    </div>
-</body>
+  </body>
 </html>
