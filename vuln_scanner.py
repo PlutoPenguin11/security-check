@@ -21,6 +21,8 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib import colors
 from io import BytesIO
 import pymysql
+import json
+import cryptography
 
 # Ensure PyMySQL works with SQLAlchemy
 pymysql.install_as_MySQLdb()
@@ -29,7 +31,22 @@ app = Flask(__name__)
 CORS(app, resources={r"/scan": {"origins": "*"}})  # Enable CORS for scan route
 
 # Configuration for database and security
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:admin@localhost/users'  # custom based on machine
+credentials_file = 'db_credentials.json'  # Keeps sensitive info off of git
+try:
+    with open(credentials_file, 'r') as f:
+        credentials = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    credentials = {
+        'host': input('Database Host: '),
+        'port': input('Port: '),
+        'username': input('Username: '),
+        'password': input('Password: '),
+        'db_name': input('Database Name: ')
+    }
+    with open(credentials_file, 'w') as f:
+        json.dump(credentials, f, indent=4)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql://{credentials['username']}:{credentials['password']}@{credentials['host']}:{credentials['port']}/{credentials['db_name']}"
 app.config['SECRET_KEY'] = 'secret'
 
 db = SQLAlchemy(app)
