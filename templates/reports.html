@@ -106,9 +106,12 @@
           <div class="timestamp"><strong>Scanned On:</strong> {{ report.timestamp }}</div>
           <div class="content">
             <strong>Target:</strong> {{ report.target }}<br>
-            <strong>Open Ports:</strong> {{ report.open_ports }}<br>
+            <strong>Open Ports:</strong> {{ report.open_ports | join(", ") if report.open_ports else "None" }}<br>
             <strong>Headers:</strong> {{ report.headers }}<br>
-            <strong>Encryption Strength:</strong> {{ report.encryption_strength }}<br>
+            <strong>Encryption Strength:</strong>{% if report.encryption_strength %} {{ report.encryption_strength.key_exchange_strength }}; {{ report.encryption_strength.strength }}
+            {% else %}
+              No encryption data available.
+            {% endif %}<br>
             <strong>Additional Info:</strong> {{ report.additional_info }}
           </div>
           <div class="button-container">

@@ -282,12 +282,20 @@ def scan():
         )
         open_ports = [port for port in results if port]
 
+    # Retrieve encryption strength details
+    encryption_details = get_encryption_info(target_host)
+    simplified_encryption = {
+        "key_exchange_strength": encryption_details.get("key_exchange_strength", "Unknown"),
+        "strength": encryption_details.get("strength", "Unknown")
+    }
+
     # Save scan results in the database
     new_scan = Scan(
         user_id=current_user.id,
         target=target_host,
         open_ports=open_ports,
         headers=headers,
+        encryption_strength=simplified_encryption,  # Store only key exchange and verdict
         additional_info="Scan performed successfully."
     )
     db.session.add(new_scan)
@@ -300,9 +308,10 @@ def scan():
         "target": target_host,
         "open_ports": open_ports,
         "headers": headers,
-        "encryption_strength": None,  # Optionally add encryption results here
+        "encryption_strength": simplified_encryption,  # Return simplified encryption details
         "additional_info": new_scan.additional_info
     })
+
 
 
 @app.route('/download_report/<int:report_id>', methods=['GET'])
