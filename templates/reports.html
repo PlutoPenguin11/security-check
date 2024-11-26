@@ -6,56 +6,51 @@
     <title>Report History</title>
     <style>
       body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 20px;
-            background-color: #f9f9f9;
-            padding-top: 60px; /* Add space for the banner */
-        }
-        .banner {
-            width: 100%;
-            background-color: #007bff;
-            color: white;
-            padding: 10px 5px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 40px;
-            z-index: 1000;
-        }
-
-        .banner .title {
-            font-size: 20px;
-            font-weight: bold;
-            position: absolute; /* Allow positioning relative to the banner */
-            left: 50%;
-            transform: translateX(-50%); /* Center the title */
-        }
-
-        .banner .nav-links {
-            position: absolute;
-            left: 20px;
-            display: flex;
-            gap: 15px;
-        }
-
-        .banner .nav-links a {
-            text-decoration: none;
-            color: white;
-            font-size: 16px;
-            padding: 5px 5px;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-
-        .banner .nav-links a:hover {
-            background-color: #0056b3;
-        }
-
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 20px;
+        background-color: #f9f9f9;
+        padding-top: 60px; /* Add space for the banner */
+      }
+      .banner {
+        width: 100%;
+        background-color: #007bff;
+        color: white;
+        padding: 10px 5px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 40px;
+        z-index: 1000;
+      }
+      .banner .title {
+        font-size: 20px;
+        font-weight: bold;
+        position: absolute; /* Allow positioning relative to the banner */
+        left: 50%;
+        transform: translateX(-50%); /* Center the title */
+      }
+      .banner .nav-links {
+        position: absolute;
+        left: 20px;
+        display: flex;
+        gap: 15px;
+      }
+      .banner .nav-links a {
+        text-decoration: none;
+        color: white;
+        font-size: 16px;
+        padding: 5px 5px;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+      }
+      .banner .nav-links a:hover {
+        background-color: #0056b3;
+      }
       h1 {
         color: #333;
       }
@@ -70,6 +65,7 @@
       }
       .content {
         margin-top: 5px;
+        white-space: pre-wrap;
       }
       .no-history {
         font-size: 1.2em;
@@ -97,23 +93,34 @@
     <div class="banner">
       <div class="title">VeriVuln</div>
       <div class="nav-links">
-          <a href="{{ url_for('home') }}">Home</a>
-          <a >About Us</a>
-          <a href="{{ url_for('login') }}">Login</a>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a>About Us</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
       </div>
-  </div>
+    </div>
+
     <div id="report-history">
       {% if reports %}
         {% for report in reports %}
         <div class="report">
-          <div class="timestamp">{{ report.timestamp }}</div>
-          <div class="content"><pre>{{ report | tojson(indent=2) }}</pre></div>
+          <div class="timestamp"><strong>Scanned On:</strong> {{ report.timestamp }}</div>
+          <div class="content">
+            <strong>Target:</strong> {{ report.target }}<br>
+            <strong>Open Ports:</strong> {{ report.open_ports }}<br>
+            <strong>Headers:</strong> {{ report.headers }}<br>
+            <strong>Encryption Strength:</strong> {{ report.encryption_strength }}<br>
+            <strong>Additional Info:</strong> {{ report.additional_info }}
+          </div>
+          <div class="button-container">
+            <button onclick="window.location.href='/download_report/{{ report.id }}'">Download as PDF</button>
+          </div>
         </div>
         {% endfor %}
       {% else %}
         <p class="no-history">No report history</p>
       {% endif %}
     </div>
+
     <div class="button-container">
       <button onclick="window.location.href='/index'">Back to Index</button>
     </div>

@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 
 import requests
-from flask import Flask, render_template, url_for, redirect, flash, request, jsonify
+from flask import Flask, Response, render_template, url_for, redirect, flash, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from flask_wtf import FlaskForm
@@ -13,6 +13,13 @@ from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length, ValidationError
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
+from sqlalchemy import desc
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib import colors
+from io import BytesIO
 import pymysql
 import json
 import cryptography
@@ -43,6 +50,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql://{credentials['username']}:{cre
 app.config['SECRET_KEY'] = 'secret'
 
 db = SQLAlchemy(app)
+if(db):
+    print("True")
+else:
+    print("False")
 bcrypt = Bcrypt(app)
 
 login_manager = LoginManager()
@@ -57,6 +68,19 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), nullable=False, unique=True)
     password = db.Column(db.String(80), nullable=False)
+
+class Scan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
+    target = db.Column(db.String(255), nullable=False)
+    scan_date = db.Column(db.DateTime, default=db.func.current_timestamp())
+    open_ports = db.Column(db.JSON, nullable=True)
+    headers = db.Column(db.JSON, nullable=True)
+    encryption_strength = db.Column(db.JSON, nullable=True)
+    vulnerabilities = db.Column(db.JSON, nullable=True)
+    additional_info = db.Column(db.Text, nullable=True)
+
+    user = db.relationship('User', backref=db.backref('scans', lazy=True))
 
 # Registration form
 class RegisterForm(FlaskForm):
@@ -95,8 +119,23 @@ def about():
     return render_template('about.html')
 
 @app.route('/reports')
-def reports():
-    return render_template('reports.html')
+def report_history():
+    # Fetch all reports for the current user, sorted by timestamp (newest to oldest)
+    user_reports = Scan.query.filter_by(user_id=current_user.id).order_by(desc(Scan.scan_date)).all()
+
+    # Format the reports for display
+    reports = [{
+        "id": report.id,
+        "target": report.target,
+        "timestamp": report.scan_date.strftime("%Y-%m-%d %H:%M:%S"),
+        "open_ports": report.open_ports,
+        "headers": report.headers,
+        "encryption_strength": report.encryption_strength,
+        "additional_info": report.additional_info
+    } for report in user_reports]
+
+    # Render the reports.html template with user-specific reports
+    return render_template('reports.html', reports=reports)
 
 
 # Route for login
@@ -243,8 +282,113 @@ def scan():
         )
         open_ports = [port for port in results if port]
 
-    logging.info(f"Open ports: {open_ports}")
-    return jsonify({"headers": headers, "open_ports": open_ports})
+    # Save scan results in the database
+    new_scan = Scan(
+        user_id=current_user.id,
+        target=target_host,
+        open_ports=open_ports,
+        headers=headers,
+        additional_info="Scan performed successfully."
+    )
+    db.session.add(new_scan)
+    db.session.commit()
+
+    logging.info(f"Scan results saved for user {current_user.id}")
+
+    return jsonify({
+        "id": new_scan.id,
+        "target": target_host,
+        "open_ports": open_ports,
+        "headers": headers,
+        "encryption_strength": None,  # Optionally add encryption results here
+        "additional_info": new_scan.additional_info
+    })
+
+
+@app.route('/download_report/<int:report_id>', methods=['GET'])
+@login_required
+def download_report(report_id):
+    # Fetch the specific report
+    report = Scan.query.filter_by(id=report_id, user_id=current_user.id).first_or_404()
+
+    # Create the PDF in memory
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+
+    # Sample stylesheet for formatting
+    styles = getSampleStyleSheet()
+    title_style = styles['Heading1']
+    section_style = styles['Heading2']
+    normal_style = styles['BodyText']
+
+    # Add the header with the user's full name and scan date
+    title = f"Scan Report for {current_user.username} on {report.scan_date.strftime('%Y-%m-%d')}"
+    elements.append(Paragraph(title, title_style))
+    elements.append(Spacer(1, 12))
+
+    # Add the target and scan details
+    elements.append(Paragraph("Scan Details", section_style))
+    scan_details = [
+        ["Target:", report.target],
+        ["Date of Scan:", report.scan_date.strftime('%Y-%m-%d %H:%M:%S')],
+        ["Open Ports:", ", ".join(map(str, report.open_ports)) if report.open_ports else "None"],
+    ]
+    scan_table = Table(scan_details, colWidths=[150, 350])
+    scan_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    elements.append(scan_table)
+    elements.append(Spacer(1, 12))
+
+    # Add headers section
+    elements.append(Paragraph("HTTP Headers", section_style))
+    headers = report.headers or {}
+    for key, value in headers.items():
+        elements.append(Paragraph(f"{key}: {value}", normal_style))
+    elements.append(Spacer(1, 12))
+
+    # Add encryption strength section
+    elements.append(Paragraph("Encryption Strength", section_style))
+    encryption = report.encryption_strength or {}
+    for key, value in encryption.items():
+        elements.append(Paragraph(f"{key}: {value}", normal_style))
+    elements.append(Spacer(1, 12))
+
+    # Add vulnerabilities section
+    elements.append(Paragraph("Vulnerabilities", section_style))
+    vulnerabilities = report.vulnerabilities or []
+    if vulnerabilities:
+        for vuln in vulnerabilities:
+            elements.append(Paragraph(f"CVE: {vuln.get('cve', 'Unknown')} - {vuln.get('description', 'No description')}", normal_style))
+    else:
+        elements.append(Paragraph("No vulnerabilities detected.", normal_style))
+    elements.append(Spacer(1, 12))
+
+    # Add additional info section
+    elements.append(Paragraph("Additional Information", section_style))
+    elements.append(Paragraph(report.additional_info or "No additional information provided.", normal_style))
+    elements.append(Spacer(1, 12))
+
+    # Build the PDF
+    pdf.build(elements)
+
+    # Return the PDF as a response
+    buffer.seek(0)
+    return Response(
+        buffer,
+        mimetype='application/pdf',
+        headers={
+            'Content-Disposition': f'attachment; filename=report_{report.id}.pdf'
+        }
+    )
 
 if __name__ == "__main__":
     # Create the tables (make sure the database exists)
