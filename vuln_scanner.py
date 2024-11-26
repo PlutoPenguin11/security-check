@@ -13,6 +13,7 @@ from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length, ValidationError
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
+from sqlalchemy import desc
 import pymysql
 
 # Ensure PyMySQL works with SQLAlchemy
@@ -22,10 +23,14 @@ app = Flask(__name__)
 CORS(app, resources={r"/scan": {"origins": "*"}})  # Enable CORS for scan route
 
 # Configuration for database and security
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:admin@localhost/users'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:admin@localhost/users'  # custom
 app.config['SECRET_KEY'] = 'secret'
 
 db = SQLAlchemy(app)
+if(db):
+    print("True")
+else:
+    print("False")
 bcrypt = Bcrypt(app)
 
 login_manager = LoginManager()
@@ -40,6 +45,19 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), nullable=False, unique=True)
     password = db.Column(db.String(80), nullable=False)
+
+class Scan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="CASCADE"), nullable=False)
+    target = db.Column(db.String(255), nullable=False)
+    scan_date = db.Column(db.DateTime, default=db.func.current_timestamp())
+    open_ports = db.Column(db.JSON, nullable=True)
+    headers = db.Column(db.JSON, nullable=True)
+    encryption_strength = db.Column(db.JSON, nullable=True)
+    vulnerabilities = db.Column(db.JSON, nullable=True)
+    additional_info = db.Column(db.Text, nullable=True)
+
+    user = db.relationship('User', backref=db.backref('scans', lazy=True))
 
 # Registration form
 class RegisterForm(FlaskForm):
@@ -78,8 +96,23 @@ def about():
     return render_template('about.html')
 
 @app.route('/reports')
-def reports():
-    return render_template('reports.html')
+def report_history():
+    # Fetch all reports for the current user, sorted by timestamp (newest to oldest)
+    user_reports = Scan.query.filter_by(user_id=current_user.id).order_by(desc(Scan.scan_date)).all()
+
+    # Format the reports for display
+    reports = [{
+        "id": report.id,
+        "target": report.target,
+        "timestamp": report.scan_date.strftime("%Y-%m-%d %H:%M:%S"),
+        "open_ports": report.open_ports,
+        "headers": report.headers,
+        "encryption_strength": report.encryption_strength,
+        "additional_info": report.additional_info
+    } for report in user_reports]
+
+    # Render the reports.html template with user-specific reports
+    return render_template('reports.html', reports=reports)
 
 
 # Route for login
