@@ -265,8 +265,28 @@ def scan():
         )
         open_ports = [port for port in results if port]
 
-    logging.info(f"Open ports: {open_ports}")
-    return jsonify({"headers": headers, "open_ports": open_ports})
+    # Save scan results in the database
+    new_scan = Scan(
+        user_id=current_user.id,
+        target=target_host,
+        open_ports=open_ports,
+        headers=headers,
+        additional_info="Scan performed successfully."
+    )
+    db.session.add(new_scan)
+    db.session.commit()
+
+    logging.info(f"Scan results saved for user {current_user.id}")
+
+    return jsonify({
+        "id": new_scan.id,
+        "target": target_host,
+        "open_ports": open_ports,
+        "headers": headers,
+        "encryption_strength": None,  # Optionally add encryption results here
+        "additional_info": new_scan.additional_info
+    })
+
 
 @app.route('/download_report/<int:report_id>', methods=['GET'])
 @login_required
