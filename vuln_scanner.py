@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 
 import requests
-from flask import Flask, render_template, url_for, redirect, flash, request, jsonify
+from flask import Flask, Response, render_template, url_for, redirect, flash, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from flask_wtf import FlaskForm
@@ -14,6 +14,12 @@ from wtforms.validators import InputRequired, Length, ValidationError
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from sqlalchemy import desc
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib import colors
+from io import BytesIO
 import pymysql
 
 # Ensure PyMySQL works with SQLAlchemy
@@ -23,7 +29,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/scan": {"origins": "*"}})  # Enable CORS for scan route
 
 # Configuration for database and security
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:admin@localhost/users'  # custom
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:admin@localhost/users'  # custom based on machine
 app.config['SECRET_KEY'] = 'secret'
 
 db = SQLAlchemy(app)
@@ -261,6 +267,91 @@ def scan():
 
     logging.info(f"Open ports: {open_ports}")
     return jsonify({"headers": headers, "open_ports": open_ports})
+
+@app.route('/download_report/<int:report_id>', methods=['GET'])
+@login_required
+def download_report(report_id):
+    # Fetch the specific report
+    report = Scan.query.filter_by(id=report_id, user_id=current_user.id).first_or_404()
+
+    # Create the PDF in memory
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+
+    # Sample stylesheet for formatting
+    styles = getSampleStyleSheet()
+    title_style = styles['Heading1']
+    section_style = styles['Heading2']
+    normal_style = styles['BodyText']
+
+    # Add the header with the user's full name and scan date
+    title = f"Scan Report for {current_user.username} on {report.scan_date.strftime('%Y-%m-%d')}"
+    elements.append(Paragraph(title, title_style))
+    elements.append(Spacer(1, 12))
+
+    # Add the target and scan details
+    elements.append(Paragraph("Scan Details", section_style))
+    scan_details = [
+        ["Target:", report.target],
+        ["Date of Scan:", report.scan_date.strftime('%Y-%m-%d %H:%M:%S')],
+        ["Open Ports:", ", ".join(map(str, report.open_ports)) if report.open_ports else "None"],
+    ]
+    scan_table = Table(scan_details, colWidths=[150, 350])
+    scan_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    elements.append(scan_table)
+    elements.append(Spacer(1, 12))
+
+    # Add headers section
+    elements.append(Paragraph("HTTP Headers", section_style))
+    headers = report.headers or {}
+    for key, value in headers.items():
+        elements.append(Paragraph(f"{key}: {value}", normal_style))
+    elements.append(Spacer(1, 12))
+
+    # Add encryption strength section
+    elements.append(Paragraph("Encryption Strength", section_style))
+    encryption = report.encryption_strength or {}
+    for key, value in encryption.items():
+        elements.append(Paragraph(f"{key}: {value}", normal_style))
+    elements.append(Spacer(1, 12))
+
+    # Add vulnerabilities section
+    elements.append(Paragraph("Vulnerabilities", section_style))
+    vulnerabilities = report.vulnerabilities or []
+    if vulnerabilities:
+        for vuln in vulnerabilities:
+            elements.append(Paragraph(f"CVE: {vuln.get('cve', 'Unknown')} - {vuln.get('description', 'No description')}", normal_style))
+    else:
+        elements.append(Paragraph("No vulnerabilities detected.", normal_style))
+    elements.append(Spacer(1, 12))
+
+    # Add additional info section
+    elements.append(Paragraph("Additional Information", section_style))
+    elements.append(Paragraph(report.additional_info or "No additional information provided.", normal_style))
+    elements.append(Spacer(1, 12))
+
+    # Build the PDF
+    pdf.build(elements)
+
+    # Return the PDF as a response
+    buffer.seek(0)
+    return Response(
+        buffer,
+        mimetype='application/pdf',
+        headers={
+            'Content-Disposition': f'attachment; filename=report_{report.id}.pdf'
+        }
+    )
 
 if __name__ == "__main__":
     # Create the tables (make sure the database exists)

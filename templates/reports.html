@@ -93,9 +93,9 @@
     <div class="banner">
       <div class="title">VeriVuln</div>
       <div class="nav-links">
-          <a href="{{ url_for('home') }}">Home</a>
-          <a href="{{ url_for('about') }}">About Us</a>
-          <a href="{{ url_for('logout') }}">Logout</a>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a>About Us</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
       </div>
     </div>
 
@@ -111,12 +111,16 @@
             <strong>Encryption Strength:</strong> {{ report.encryption_strength }}<br>
             <strong>Additional Info:</strong> {{ report.additional_info }}
           </div>
+          <div class="button-container">
+            <button onclick="window.location.href='/download_report/{{ report.id }}'">Download as PDF</button>
+          </div>
         </div>
         {% endfor %}
       {% else %}
         <p class="no-history">No report history</p>
       {% endif %}
     </div>
+
     <div class="button-container">
       <button onclick="window.location.href='/index'">Back to Index</button>
     </div>
