@@ -48,4 +48,4 @@ The application requires the following dependencies:
 - <b>Jacob Chung</b>: Functionality for scanner (mostly encryption and authentication details), security header description and 'Advanced' information section, report history implementation with report database integration, general website structure, frontend design for scan page, 'About' page, and 'Report History' page
 - <b>Mike Sadowski</b>: Security header backend code, port scanning functionality, Flask implementation, initial application launch, core features in early development 
 - <b>Deni Cara</b>: Login functionality, database logging, user data encryption, frontend design for general page layout and login screen
-- <b>Joshua Pokorzynski</b>: Live server implementation with functional online database and domain; transition from application to fully-online website
+- <b>Joshua Pokorzynski</b>: Live server implementation with functional online database and domain; transition from application to fully-online website, stress testing, NGINX, SSL certification, stress testing
