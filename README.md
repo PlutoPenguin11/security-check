@@ -49,3 +49,5 @@ The application requires the following dependencies:
 - <b>Mike Sadowski</b>: Security header backend code, port scanning functionality, Flask implementation, initial application launch, core features in early development 
 - <b>Deni Cara</b>: Login functionality, database logging, user data encryption, frontend design for general page layout and login screen
 - <b>Joshua Pokorzynski</b>: Live server implementation with functional online database and domain; transition from application to fully-online website, stress testing, NGINX, SSL certification, stress testing
+
+  *More information on contributions can be found manually under each file by clicking the "Blame" tab
