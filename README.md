@@ -37,13 +37,13 @@ The application requires the following dependencies:
 
 3. Run the 'vuln_scanner.py' file
 
-## (NON-FUNCTIONAL) Non-Installation Gude for Running Live Server Build
+## (NON-FUNCTIONAL) ~~Non-Installation Gude for Running Live Server Build~~
 
 THIS FUNCTIONALITY IS NO LONGER SUPPORTED, THE SERVER DOES NOT RUN ONLINE
 
-1. Follow this link: https://verivuln.duckdns.org/
+~~1. Follow this link: https://verivuln.duckdns.org/~~
 
-2. Enjoy the website running live on the Internet as intended
+~~2. Enjoy the website running live on the Internet as intended~~
 
 ## Team Code Contributions
 
